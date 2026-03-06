@@ -1,12 +1,12 @@
 library(refineR)
 
-indr = './ribench_sample/'
-outdr = './refineR_predictions/'
+indir <- './test_csvs/'
+outdir <- './refineR_predictions/'
 
-dir.create(outdr)
+dir.create(outdir, showWarnings = FALSE)
 
 cat('Reading file list\n')
-files_test <- read.csv(paste0(indr,'files.csv'))$file
+files_test <- list.files(indir)
 files_test <- sample(files_test)
 cat('Number of files:', length(files_test), '\n')
 
@@ -19,16 +19,13 @@ for (file in files_test) {
 
     i <- i + 1
 
-    split_string <- strsplit(file, "/")[[1]]
-    outfile <- tail(split_string, 1)
+    if (!file.exists(paste0(outdir, file))) {
 
-    if (!file.exists(paste0(outdr, outfile))) {
-
-        data <- read.csv(file, header=FALSE)$V1
+        data <- read.csv(paste0(indir, file), header=FALSE)$V1
         fit <- findRI(data)
         result <- getRI(fit, Scale='original')
 
-        write.csv(result, paste0(outdr, outfile))
+        write.csv(result, paste0(outdir, file))
     }
 
     setTxtProgressBar(pb, i)

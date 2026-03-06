@@ -1,5 +1,6 @@
 **/archive/
 **/.ipynb_checkpoints/
+**/__pycache__/
 *.csv
 *.h5
 *.keras
