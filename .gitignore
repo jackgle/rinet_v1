@@ -1,0 +1,10 @@
+**/archive/
+**/.ipynb_checkpoints/
+*.csv
+*.h5
+*.keras
+*.png
+*.Rdata
+*.pkl
+
+
