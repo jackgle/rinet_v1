@@ -1,7 +1,11 @@
-"""Evaluate refineR on RIbench test subset."""
+"""Evaluate refineR on the full RIbench dataset.
+
+Reads ground truths from SpecificationTestSets.csv and predictions from
+refineR_predictions/. Does NOT load the raw data CSVs.
+"""
 import os
 import sys
-import pickle
+import argparse
 import numpy as np
 import pandas as pd
 
@@ -9,47 +13,83 @@ _script_dir = os.path.dirname(os.path.abspath(__file__))
 _project_root = os.path.join(_script_dir, '..', '..')
 sys.path.insert(0, _project_root)
 
-from evaluation.utils import norm_err, compute_errors, summarize_errors, per_analyte_summary
+from evaluation.utils import compute_errors, compute_zdev, print_results
 
 
-def main():
-    test_data_path = os.path.join(os.path.dirname(__file__), 'ribench_sample')
-    prediction_path = os.path.join(os.path.dirname(__file__), 'refineR_predictions')
+def main(meta_csv=None, exclude=()):
+    if meta_csv is None:
+        meta_csv = os.path.join(_script_dir, '..', '..', 'data', 'RIbench', 'SpecificationTestSets.csv')
+    prediction_path = os.path.join(_script_dir, 'refineR_predictions')
 
-    # load test data
-    test_x = pickle.load(open(os.path.join(test_data_path, 'x.pkl'), 'rb'))
-    test_y = np.array(pickle.load(open(os.path.join(test_data_path, 'y.pkl'), 'rb')))
-    test_files = pickle.load(open(os.path.join(test_data_path, 'files.pkl'), 'rb'))
-    test_files = np.array([i.split('/')[-1] for i in test_files])
-    test_analytes = np.array([i.split('_')[1] for i in test_files])
+    # Load spec CSV (contains ground truths and z-score parameters)
+    meta = pd.read_csv(meta_csv)
+    if exclude:
+        meta = meta[~meta['Analyte'].isin(exclude)]
 
-    # load predictions (only for completed files)
+    # Match predictions to spec rows (include all rows, NaN when missing)
+    test_y = []
     test_p = []
-    completed = []
-    for f in test_files:
-        path = os.path.join(prediction_path, f)
-        if os.path.exists(path):
-            completed.append(f)
-            test_p.append(pd.read_csv(path).PointEst.values)
+    test_analytes = []
+    test_files = []
+    n_missing = 0
 
+    for _, row in meta.iterrows():
+        idx = int(row['Index'])
+        analyte = row['Analyte']
+        seed = int(row['startSeed'])
+        fname = f"{idx}_{analyte}_seed_{seed}.csv"
+        pred_file = os.path.join(prediction_path, fname)
+
+        if os.path.exists(pred_file):
+            pred = pd.read_csv(pred_file)
+            est_lrl = pred.PointEst.values[0]
+            est_url = pred.PointEst.values[1]
+        else:
+            n_missing += 1
+            est_lrl, est_url = np.nan, np.nan
+
+        test_y.append(np.array([row['GT_LRL'], row['GT_URL']]))
+        test_p.append(np.array([est_lrl, est_url]))
+        test_analytes.append(analyte)
+        test_files.append(fname)
+
+    test_y = np.array(test_y)
     test_p = np.array(test_p)
+    test_analytes = np.array(test_analytes)
 
-    # filter to only completed predictions
-    idx_complete = np.array([i in completed for i in test_files])
-    test_x = [test_x[i] for i in np.where(idx_complete)[0]]
-    test_y = test_y[idx_complete]
-    test_files = test_files[idx_complete]
-    test_analytes = test_analytes[idx_complete]
+    total = len(meta)
+    found = len(test_files)
+    print(f"Predictions found for {found}/{total} files ({n_missing} missing)")
 
-    # compute errors
+    # Compute normalized errors
     errors = compute_errors(test_y, test_p)
 
-    print("=== refineR on RIbench ===")
-    summarize_errors(errors)
-    print()
-    print(per_analyte_summary(errors, test_analytes,
-                              analyte_order=['Hb', 'Ca', 'FT4', 'AST', 'LACT', 'GGT', 'TSH', 'IgE']))
+    # Compute z-score deviations
+    meta_indexed = meta.set_index('Index')
+    zdevs = []
+    for fname, est_lrl, est_url in zip(test_files, test_p[:, 0], test_p[:, 1]):
+        file_index = int(fname.split('_')[0])
+        row = meta_indexed.loc[file_index]
+        result = compute_zdev(
+            gt_lrl=row['GT_LRL'], gt_url=row['GT_URL'],
+            est_lrl=est_lrl, est_url=est_url,
+            nonp_mu=row['nonp_mu'], nonp_sigma=row['nonp_sigma'],
+            nonp_lambda=row['nonp_lambda'], nonp_shift=row['nonp_shift'],
+            analyte=row['Analyte'],
+        )
+        zdevs.append(result['zz_dev_abs_cutoff_ov'])
+    zdevs = np.array(zdevs)
+
+    print_results("refineR on RIbench", errors, zdevs, test_analytes)
+
+    return errors, zdevs
 
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--meta_csv', type=str, default=None,
+                        help='Path to SpecificationTestSets.csv')
+    parser.add_argument('--exclude', type=str, nargs='+', default=[],
+                        help='Analytes to exclude (e.g. --exclude CRP LDH)')
+    args = parser.parse_args()
+    main(meta_csv=args.meta_csv, exclude=tuple(args.exclude))

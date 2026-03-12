@@ -43,6 +43,8 @@ def main():
     print("=== refineR on Simulated ===")
     summarize_errors(errors)
 
+    return errors
+
 
 if __name__ == '__main__':
     main()

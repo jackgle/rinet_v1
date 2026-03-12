@@ -7,5 +7,6 @@
 *.png
 *.Rdata
 *.pkl
-
+*.npy
+*.DS_Store
 

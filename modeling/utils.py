@@ -25,6 +25,7 @@ def standardize_samples(data_list):
     Returns (data_scaled, means, stds).
     """
     data_list = [np.array(i) for i in data_list]
+    data_list = [i[i > 0] for i in data_list]
     means = [i.mean() for i in data_list]
     stds = [i.std() for i in data_list]
     data_scaled = [(i - i.mean()) / i.std() for i in data_list]

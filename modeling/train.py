@@ -110,7 +110,6 @@ def main():
         pickle.dump(scalery, f)
     with open(os.path.join(args.output_path, 'model_history.npy'), 'wb') as f:
         pickle.dump(history.history, f)
-    model.save_weights(os.path.join(args.output_path, 'model.weights.h5'))
 
     print("Training complete.")
 
