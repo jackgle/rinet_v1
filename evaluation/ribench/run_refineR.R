@@ -31,7 +31,14 @@ for (file in files_test) {
     if (!file.exists(file.path(outdir, outfile))) {
 
         data <- read.csv(file, header=FALSE)$V1
-        fit <- findRI(data)
+
+        # Use modBoxCox model for LDH, default for other analytes
+        if (grepl("_LDH_", outfile)) {
+            fit <- findRI(data, model = "modBoxCox")
+        } else {
+            fit <- findRI(data)
+        }
+
         result <- getRI(fit, Scale='original')
 
         write.csv(result, file.path(outdir, outfile))

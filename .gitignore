@@ -9,4 +9,9 @@
 *.pkl
 *.npy
 *.DS_Store
+tmp/
+refineR_predictions/
+.claude/
+**/RIbench/
+**/test_csvs/
 

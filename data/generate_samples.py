@@ -24,7 +24,7 @@ def parse_args():
     parser.add_argument('--output_dir', type=str, default='./simulated/')
     parser.add_argument('--n_train', type=int, default=9000)
     parser.add_argument('--n_test', type=int, default=1000)
-    parser.add_argument('--meta_csv', type=str, default='./RIbench/BMTestSets_meta.csv')
+    parser.add_argument('--meta_csv', type=str, default='./RIbench/SpecificationTestSets.csv')
     return parser.parse_args()
 
 

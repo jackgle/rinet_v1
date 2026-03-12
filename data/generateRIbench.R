@@ -7,4 +7,4 @@ generateBiomarkerTestSets(workingDir=dr)
 
 # get test set metadata including ground truth RIs
 test_meta <- loadTestsetDefinition()
-write.csv(test_meta, paste0(dr,'BMTestSets_meta.csv'))
+write.csv(test_meta, paste0(dr,'SpecificationTestSets.csv'))

@@ -17,10 +17,11 @@ Fit a parametric model to RIbench mixture parameters, then sample synthetic trai
 
 ```bash
 cd data
+Rscript generateRIbench.R
 python generate_samples.py
 ```
 
-This reads `RIbench/BMTestSets_meta.csv`, fits the `RIbenchModeler`, and outputs pickle files to `data/simulated/`.
+This reads `RIbench/SpecificationTestSets.csv`, fits the `RIbenchModeler`, and outputs pickle files to `data/simulated/`.
 
 ### 2. Train the model
 
@@ -63,3 +64,9 @@ python evaluation/plot_summary_scores.py
 ```
 
 For per-analyte breakdowns and visualization, see the notebooks in `evaluation/`.
+
+## Citation
+
+If you use this code in academic work, please cite the associated paper:
+
+LeBien, J., Velev, J. & Roche-Lima, A. Indirect reference interval estimation using a convolutional neural network with application to cancer antigen 125. Sci Rep 14, 19332 (2024). https://doi.org/10.1038/s41598-024-70074-6
