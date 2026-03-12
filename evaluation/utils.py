@@ -25,11 +25,17 @@ def norm_err(y_test, p_test):
         return np.nan
     y_valid = y[valid]
     p_valid = p[valid]
-    # Single-limit case (e.g. CRP with only URL): use relative error
+    # Single-limit case (e.g. CRP with only URL): treat RI as [0, URL]
     if len(y_valid) == 1:
-        return np.abs(p_valid[0] - y_valid[0]) / y_valid[0] if y_valid[0] != 0 else np.abs(p_valid[0] - y_valid[0])
-    targets = np.array([-1, 1])[valid]
-    normalized = (p_valid - y_valid.mean()) / y_valid.std() if y_valid.std() > 0 else p_valid - y_valid.mean()
+        y_full = np.array([0.0, y_valid[0]])
+        p_full = np.array([0.0, p_valid[0]])
+    else:
+        y_full = y_valid
+        p_full = p_valid
+    targets = np.array([-1, 1]) if len(y_full) == 2 else np.array([-1, 1])[valid]
+    mean = y_full.mean()
+    std = y_full.std()
+    normalized = (p_full - mean) / std if std > 0 else p_full - mean
     return np.mean(np.abs(targets - normalized)) / 2
 
 
@@ -103,7 +109,7 @@ def load_full_ribench(ribench_data_dir, meta_csv, exclude_analytes=('CRP', 'LDH'
 
     Args:
         ribench_data_dir: path to data/RIbench/Data/
-        meta_csv: path to BMTestSets_meta.csv
+        meta_csv: path to SpecificationTestSets.csv
         exclude_analytes: analytes to skip
 
     Returns:

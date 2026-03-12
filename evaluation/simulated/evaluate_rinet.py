@@ -20,7 +20,7 @@ def main():
     test_x, test_y = load_simulated_test_set(data_path)
 
     # scale data
-    data_scaled, data_means, data_stds = standardize_samples(test_x)
+    data_scaled, data_means, data_stds = standardize_samples(test_x, filter_positive=False)
 
     # load model and predict
     model, scalery = load_model(model_path)

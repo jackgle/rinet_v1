@@ -32,7 +32,7 @@ def main(ribench_dir=None, meta_csv=None):
     results.append(('Average Norm. Error', 'RINet', 'Simulated', np.mean(errors)))
 
     print("\n" + "=" * 50)
-    errors, zdevs = eval_refiner_ribench(ribench_dir=ribench_dir, meta_csv=meta_csv)
+    errors, zdevs = eval_refiner_ribench(meta_csv=meta_csv)
     results.append(('Accuracy', 'refineR', 'RIBench', accuracy_at_threshold(errors, 0.1)))
     results.append(('Average Norm. Error', 'refineR', 'RIBench', np.mean(errors)))
     results.append(('Mean |Z-dev|', 'refineR', 'RIBench', np.nanmean(zdevs)))
@@ -58,6 +58,6 @@ if __name__ == '__main__':
     parser.add_argument('--ribench_dir', type=str, default=None,
                         help='Path to RIbench Data/ directory (default: data/RIbench/Data/)')
     parser.add_argument('--meta_csv', type=str, default=None,
-                        help='Path to RIbench metadata CSV (default: data/RIbench/BMTestSets_meta.csv)')
+                        help='Path to RIbench metadata CSV (default: data/RIbench/SpecificationTestSets.csv)')
     args = parser.parse_args()
     main(ribench_dir=args.ribench_dir, meta_csv=args.meta_csv)

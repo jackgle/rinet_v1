@@ -19,13 +19,19 @@ def load_model(model_path):
     return model, scalery
 
 
-def standardize_samples(data_list):
+def standardize_samples(data_list, filter_positive=True):
     """Standardize each sample to zero mean and unit variance.
+
+    Args:
+        data_list: list of arrays
+        filter_positive: if True, keep only values > 0 before standardizing
+            (appropriate for real lab data, not for simulated data with negatives)
 
     Returns (data_scaled, means, stds).
     """
     data_list = [np.array(i) for i in data_list]
-    data_list = [i[i > 0] for i in data_list]
+    if filter_positive:
+        data_list = [i[i > 0] for i in data_list]
     means = [i.mean() for i in data_list]
     stds = [i.std() for i in data_list]
     data_scaled = [(i - i.mean()) / i.std() for i in data_list]
