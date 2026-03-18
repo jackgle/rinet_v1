@@ -18,7 +18,7 @@ Fit a parametric model to RIbench mixture parameters, then sample synthetic trai
 ```bash
 cd data
 Rscript generateRIbench.R
-python generate_samples.py
+python generate_samples.py --meta_csv path/to/RIbench/SpecificationTestSets.csv
 ```
 
 This reads `RIbench/SpecificationTestSets.csv`, fits the `RIbenchModeler`, and outputs pickle files to `data/simulated/`.
@@ -43,27 +43,41 @@ Exports the simulated test set as individual CSVs to `evaluation/simulated/test_
 ### 4. Run refineR (R)
 
 ```bash
-cd evaluation/ribench && Rscript run_refineR.R
+Rscript evaluation/ribench/run_refineR.R /path/to/RIbench/Data/
 cd evaluation/simulated && Rscript run_refineR.R
 ```
 
-Batch-processes test data through refineR. The RIbench script reads directly from `data/RIbench/Data/` (the full dataset). Predictions are saved to `refineR_predictions/` in each directory.
+Batch-processes test data through refineR. Predictions are saved to `refineR_predictions/` in each directory. The RIbench script uses `modBoxCox` for LDH and the 95th percentile for CRP automatically.
 
 ### 5. Evaluate
 
 ```bash
-python evaluation/evaluate_all.py
+python evaluation/evaluate_all.py --ribench_dir /path/to/RIbench/Data/ --meta_csv /path/to/SpecificationTestSets.csv
 ```
 
 Runs all four evaluations (RINet and refineR on both RIbench and simulated data) and writes `evaluation/summary_scores.csv`.
+
+By default, CRP and LDH are excluded. To include all analytes:
+
+```bash
+python evaluation/evaluate_all.py --ribench_dir ... --meta_csv ... --exclude none
+```
+
+#### RIbench subsampling
+
+To run a quick evaluation on a subset of RIbench (e.g. 1000 samples), use `evaluate_rinet.py` directly:
+
+```bash
+python evaluation/ribench/evaluate_rinet.py --ribench_dir /path/to/RIbench/Data/ --meta_csv /path/to/SpecificationTestSets.csv --n_samples 1000
+```
+
+#### Plotting
 
 To plot the summary comparison:
 
 ```bash
 python evaluation/plot_summary_scores.py
 ```
-
-For per-analyte breakdowns and visualization, see the notebooks in `evaluation/`.
 
 ## Citation
 

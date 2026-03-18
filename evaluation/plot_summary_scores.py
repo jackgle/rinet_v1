@@ -38,6 +38,8 @@ def main():
         metric_data = grouped[grouped['Metric'] == metric]
         metric_data_pivot = metric_data.pivot(index='Dataset', columns='Method', values='Score')
         metric_data_pivot = metric_data_pivot[metric_data_pivot.columns[::-1]]
+        dataset_order = ['Simulated', 'RIBench']
+        metric_data_pivot = metric_data_pivot.reindex([d for d in dataset_order if d in metric_data_pivot.index])
 
         metric_data_pivot.plot(
             kind='barh', ax=ax,

@@ -13,18 +13,18 @@ _script_dir = os.path.dirname(os.path.abspath(__file__))
 _project_root = os.path.join(_script_dir, '..', '..')
 sys.path.insert(0, _project_root)
 
-from evaluation.utils import compute_errors, compute_zdev, print_results
+from evaluation.utils import compute_errors, compute_zdev, print_results, subsample_ribench_indices, update_summary_scores
 
 
-def main(meta_csv=None, exclude=()):
-    if meta_csv is None:
-        meta_csv = os.path.join(_script_dir, '..', '..', 'data', 'RIbench', 'SpecificationTestSets.csv')
+def main(meta_csv, exclude=(), n_samples=None, seed=42):
     prediction_path = os.path.join(_script_dir, 'refineR_predictions')
+
+    # Determine which file indices to use (subsample if requested)
+    file_indices = subsample_ribench_indices(meta_csv, exclude, n_samples, seed)
 
     # Load spec CSV (contains ground truths and z-score parameters)
     meta = pd.read_csv(meta_csv)
-    if exclude:
-        meta = meta[~meta['Analyte'].isin(exclude)]
+    meta = meta[meta['Index'].isin(file_indices)]
 
     # Match predictions to spec rows (include all rows, NaN when missing)
     test_y = []
@@ -36,8 +36,8 @@ def main(meta_csv=None, exclude=()):
     for _, row in meta.iterrows():
         idx = int(row['Index'])
         analyte = row['Analyte']
-        seed = int(row['startSeed'])
-        fname = f"{idx}_{analyte}_seed_{seed}.csv"
+        start_seed = int(row['startSeed'])
+        fname = f"{idx}_{analyte}_seed_{start_seed}.csv"
         pred_file = os.path.join(prediction_path, fname)
 
         if os.path.exists(pred_file):
@@ -81,15 +81,22 @@ def main(meta_csv=None, exclude=()):
     zdevs = np.array(zdevs)
 
     print_results("refineR on RIbench", errors, zdevs, test_analytes)
+    update_summary_scores("refineR", "RIBench", errors, zdevs)
 
     return errors, zdevs
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--meta_csv', type=str, default=None,
+    parser.add_argument('--meta_csv', type=str, required=True,
                         help='Path to SpecificationTestSets.csv')
-    parser.add_argument('--exclude', type=str, nargs='+', default=[],
-                        help='Analytes to exclude (e.g. --exclude CRP LDH)')
+    parser.add_argument('--exclude', type=str, nargs='+', default=['CRP', 'LDH'],
+                        help='Analytes to exclude (default: CRP LDH). Use --exclude none to include all.')
+    parser.add_argument('--n_samples', type=int, default=None,
+                        help='Subsample to N rows (default: use all)')
+    parser.add_argument('--seed', type=int, default=42,
+                        help='Random seed for subsampling (default: 42)')
     args = parser.parse_args()
-    main(meta_csv=args.meta_csv, exclude=tuple(args.exclude))
+    exclude = [] if args.exclude == ['none'] else args.exclude
+    main(meta_csv=args.meta_csv, exclude=tuple(exclude),
+         n_samples=args.n_samples, seed=args.seed)

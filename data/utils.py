@@ -13,6 +13,13 @@ def linear(x, a, b):
     return a * x + b
 
 
+def _curve_fit_nonan(func, x, y, **kwargs):
+    """curve_fit with NaN values removed (compatible with newer scipy)."""
+    kwargs.pop('nan_policy', None)
+    mask = ~np.isnan(x) & ~np.isnan(y)
+    return opt.curve_fit(func, x[mask], y[mask], **kwargs)
+
+
 def quantize_data(data, step):
     """
     Quantize the input data by rounding each float to the nearest multiple of the given step.
@@ -117,9 +124,9 @@ class RIbenchModeler:
         self.data['left_mean_abs'] = left_mean_abs[ref_skew_sorted <= max_skew]
         y_data = self.data['left_mean_abs']
         means = np.array([np.mean(y_data[(x_data >= i) & (x_data < (i + bin_width))]) for i in bin_starts])
-        popm, _ = opt.curve_fit(exp_decay, bin_starts + bin_width / 2, means, nan_policy='omit')
+        popm, _ = _curve_fit_nonan(exp_decay, bin_starts + bin_width / 2, means)
         stds = np.array([np.std(y_data[(x_data >= i) & (x_data < (i + bin_width))]) for i in bin_starts])
-        popv, _ = opt.curve_fit(exp_decay, bin_starts + bin_width / 2, stds, nan_policy='omit')
+        popv, _ = _curve_fit_nonan(exp_decay, bin_starts + bin_width / 2, stds)
         self.fits['left_mean_abs'] = {
             'mean': {'func': exp_decay, 'params': popm},
             'std': {'func': exp_decay, 'params': popv}
@@ -130,9 +137,9 @@ class RIbenchModeler:
         self.data['right_mean'] = right_mean[ref_skew_sorted <= max_skew]
         y_data = self.data['right_mean']
         means = np.array([np.mean(y_data[(x_data >= i) & (x_data < (i + bin_width))]) for i in bin_starts])
-        popm, _ = opt.curve_fit(linear, bin_starts + bin_width / 2, means, nan_policy='omit')
+        popm, _ = _curve_fit_nonan(linear, bin_starts + bin_width / 2, means)
         stds = np.array([np.std(y_data[(x_data >= i) & (x_data < (i + bin_width))]) for i in bin_starts])
-        popv, _ = opt.curve_fit(linear, bin_starts + bin_width / 2, stds, nan_policy='omit')
+        popv, _ = _curve_fit_nonan(linear, bin_starts + bin_width / 2, stds)
         self.fits['right_mean'] = {
             'mean': {'func': linear, 'params': popm},
             'std': {'func': linear, 'params': popv}
@@ -143,9 +150,9 @@ class RIbenchModeler:
         self.data['left_std'] = left_std[ref_skew_sorted <= max_skew]
         y_data = self.data['left_std']
         means = np.array([np.mean(y_data[(x_data >= i) & (x_data < (i + bin_width))]) for i in bin_starts])
-        popm, _ = opt.curve_fit(exp_decay, bin_starts + bin_width / 2, means, nan_policy='omit')
+        popm, _ = _curve_fit_nonan(exp_decay, bin_starts + bin_width / 2, means)
         stds = np.array([np.std(y_data[(x_data >= i) & (x_data < (i + bin_width))]) for i in bin_starts])
-        popv, _ = opt.curve_fit(exp_decay, bin_starts + bin_width / 2, stds, nan_policy='omit')
+        popv, _ = _curve_fit_nonan(exp_decay, bin_starts + bin_width / 2, stds)
         self.fits['left_std'] = {
             'mean': {'func': exp_decay, 'params': popm},
             'std': {'func': exp_decay, 'params': popv}
@@ -156,9 +163,9 @@ class RIbenchModeler:
         self.data['right_std'] = right_std[ref_skew_sorted <= max_skew]
         y_data = self.data['right_std']
         means = np.array([np.mean(y_data[(x_data >= i) & (x_data < (i + bin_width))]) for i in bin_starts])
-        popm, _ = opt.curve_fit(exp_decay, bin_starts + bin_width / 2, means, nan_policy='omit')
+        popm, _ = _curve_fit_nonan(exp_decay, bin_starts + bin_width / 2, means)
         stds = np.array([np.std(y_data[(x_data >= i) & (x_data < (i + bin_width))]) for i in bin_starts])
-        popv, _ = opt.curve_fit(exp_decay, bin_starts + bin_width / 2, stds, nan_policy='omit')
+        popv, _ = _curve_fit_nonan(exp_decay, bin_starts + bin_width / 2, stds)
         self.fits['right_std'] = {
             'mean': {'func': exp_decay, 'params': popm},
             'std': {'func': exp_decay, 'params': popv}
@@ -201,7 +208,7 @@ class RIbenchModeler:
         temp_skew = np.array(temp_skew)
         bin_width = 1
         means = np.array([np.mean(temp_lambda[(temp_skew >= i) & (temp_skew < (i + bin_width))]) for i in bin_starts])
-        popm, _ = opt.curve_fit(exp_decay, bin_starts + bin_width / 2, means, nan_policy='omit')
+        popm, _ = _curve_fit_nonan(exp_decay, bin_starts + bin_width / 2, means)
         self.fits['nonp_lambda'] = {
             'mean': {'func': exp_decay, 'params': popm},
             'std': {'func': linear, 'params': [0, 0]}

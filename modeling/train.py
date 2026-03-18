@@ -86,7 +86,7 @@ def main():
     model.summary()
 
     # train
-    checkpoint_path = os.path.join(args.output_path, 'model_checkpoint.keras')
+    checkpoint_path = os.path.join(args.output_path, 'model.keras')
     checkpoint_callback = ModelCheckpoint(
         checkpoint_path,
         save_weights_only=False,
@@ -106,7 +106,7 @@ def main():
     )
 
     # save scaler and history
-    with open(os.path.join(args.output_path, 'model_y_scaler.pkl'), 'wb') as f:
+    with open(os.path.join(args.output_path, 'scaler.pkl'), 'wb') as f:
         pickle.dump(scalery, f)
     with open(os.path.join(args.output_path, 'model_history.npy'), 'wb') as f:
         pickle.dump(history.history, f)

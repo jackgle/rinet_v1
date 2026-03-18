@@ -14,18 +14,17 @@ def load_model(model_path):
     """Load trained CNN model and y_scaler from model directory."""
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
     import tensorflow as tf
-    model = tf.keras.models.load_model(os.path.join(model_path, 'model_checkpoint.keras'))
-    scalery = pickle.load(open(os.path.join(model_path, 'model_y_scaler.pkl'), 'rb'))
+    model = tf.keras.models.load_model(os.path.join(model_path, 'model.keras'))
+    scalery = pickle.load(open(os.path.join(model_path, 'scaler.pkl'), 'rb'))
     return model, scalery
 
 
-def standardize_samples(data_list, filter_positive=True):
+def standardize_samples(data_list, filter_positive=False):
     """Standardize each sample to zero mean and unit variance.
 
     Args:
         data_list: list of arrays
         filter_positive: if True, keep only values > 0 before standardizing
-            (appropriate for real lab data, not for simulated data with negatives)
 
     Returns (data_scaled, means, stds).
     """

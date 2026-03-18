@@ -1,9 +1,17 @@
 library(refineR)
 
-# resolve paths relative to this script's location
-script_dir <- dirname(normalizePath(sub('--file=', '', grep('--file=', commandArgs(trailingOnly = FALSE), value = TRUE)[1])))
-indir <- file.path(script_dir, '..', '..', 'data', 'RIbench', 'Data')
-outdir <- file.path(script_dir, 'refineR_predictions')
+# parse command-line arguments
+args <- commandArgs(trailingOnly = TRUE)
+if (length(args) < 1) {
+    stop("Usage: Rscript run_refineR.R <ribench_data_dir> [output_dir]")
+}
+indir <- args[1]
+if (length(args) >= 2) {
+    outdir <- args[2]
+} else {
+    script_dir <- dirname(normalizePath(sub('--file=', '', grep('--file=', commandArgs(trailingOnly = FALSE), value = TRUE)[1])))
+    outdir <- file.path(script_dir, 'refineR_predictions')
+}
 
 dir.create(outdir, showWarnings = FALSE, recursive = TRUE)
 
@@ -39,7 +47,12 @@ for (file in files_test) {
             fit <- findRI(data)
         }
 
-        result <- getRI(fit, Scale='original')
+        # CRP: use 95th percentile (single upper limit); others: default 2.5/97.5
+        if (grepl("_CRP_", outfile)) {
+            result <- getRI(fit, RIperc = c(0.05, 0.95), Scale='original')
+        } else {
+            result <- getRI(fit, Scale='original')
+        }
 
         write.csv(result, file.path(outdir, outfile))
     }

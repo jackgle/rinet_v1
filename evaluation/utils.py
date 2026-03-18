@@ -5,6 +5,33 @@ import pandas as pd
 from scipy.special import boxcox
 
 CUTOFF_Z = 5.0
+SUMMARY_CSV = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'summary_scores.csv')
+
+
+def update_summary_scores(method, dataset, errors, zdevs=None):
+    """Update summary_scores.csv with results for a given method/dataset."""
+    acc = accuracy_at_threshold(errors, 0.1)
+    mean_err = np.nanmean(errors)
+    rows = [
+        ('Accuracy', method, dataset, round(acc, 3)),
+        ('Average Norm. Error', method, dataset, round(mean_err, 3)),
+    ]
+    if zdevs is not None:
+        rows.append(('Mean |Z-dev|', method, dataset, round(np.nanmean(zdevs), 3)))
+
+    new_df = pd.DataFrame(rows, columns=['Metric', 'Method', 'Dataset', 'Score'])
+
+    if os.path.exists(SUMMARY_CSV):
+        existing = pd.read_csv(SUMMARY_CSV)
+        # remove old rows for this method/dataset
+        mask = ~((existing['Method'] == method) & (existing['Dataset'] == dataset))
+        existing = existing[mask]
+        df = pd.concat([existing, new_df], ignore_index=True)
+    else:
+        df = new_df
+
+    df.to_csv(SUMMARY_CSV, index=False)
+    print(f"Updated {SUMMARY_CSV}")
 
 
 def norm_err(y_test, p_test):
@@ -104,13 +131,32 @@ def load_ribench_test_set(data_path):
     return test_x, test_y, test_files, test_analytes
 
 
-def load_full_ribench(ribench_data_dir, meta_csv, exclude_analytes=('CRP', 'LDH')):
+def subsample_ribench_indices(meta_csv, exclude_analytes=('CRP', 'LDH'), n_samples=None, seed=42):
+    """Get the file Index values to use for evaluation.
+
+    Returns the full set of indices (after exclusion), or a subsampled set
+    if n_samples is specified. Both evaluate_rinet.py and evaluate_refineR.py
+    should call this to ensure identical subsampling.
+    """
+    meta = pd.read_csv(meta_csv)
+    if exclude_analytes:
+        meta = meta[~meta['Analyte'].isin(exclude_analytes)]
+    file_indices = np.sort(meta['Index'].values)
+    if n_samples is not None and n_samples < len(file_indices):
+        np.random.seed(seed)
+        file_indices = np.random.choice(file_indices, n_samples, replace=False)
+    return set(file_indices.tolist())
+
+
+def load_full_ribench(ribench_data_dir, meta_csv, exclude_analytes=('CRP', 'LDH'),
+                      file_indices=None):
     """Load the full RIbench dataset directly from CSVs.
 
     Args:
         ribench_data_dir: path to data/RIbench/Data/
         meta_csv: path to SpecificationTestSets.csv
         exclude_analytes: analytes to skip
+        file_indices: if provided, only load files with these Index values
 
     Returns:
         (test_x, test_y, test_files, test_analytes)
@@ -126,6 +172,9 @@ def load_full_ribench(ribench_data_dir, meta_csv, exclude_analytes=('CRP', 'LDH'
             continue
         for fname in sorted(filenames):
             if fname.endswith('.csv') and fname[0].isdigit():
+                file_index = int(fname.split('_')[0])
+                if file_indices is not None and file_index not in file_indices:
+                    continue
                 files.append(os.path.join(dirpath, fname))
 
     test_x = []
@@ -133,7 +182,7 @@ def load_full_ribench(ribench_data_dir, meta_csv, exclude_analytes=('CRP', 'LDH'
     test_files = []
     test_analytes = []
     for i, filepath in enumerate(files):
-        if i % 500 == 0:
+        if i % 1000 == 0:
             print(f"Loading RIbench: {i}/{len(files)}")
         fname = os.path.basename(filepath)
         file_index = int(fname.split('_')[0])

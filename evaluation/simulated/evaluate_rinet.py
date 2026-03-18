@@ -8,7 +8,7 @@ _script_dir = os.path.dirname(os.path.abspath(__file__))
 _project_root = os.path.join(_script_dir, '..', '..')
 sys.path.insert(0, _project_root)
 
-from evaluation.utils import compute_errors, summarize_errors, load_simulated_test_set, standardize_targets
+from evaluation.utils import compute_errors, summarize_errors, load_simulated_test_set, standardize_targets, update_summary_scores
 from modeling.utils import load_model, standardize_samples, predict_ris
 
 
@@ -35,6 +35,7 @@ def main():
 
     print("=== RINet on Simulated ===")
     summarize_errors(errors)
+    update_summary_scores("RINet", "Simulated", errors)
 
     return errors
 

@@ -17,11 +17,11 @@ from evaluation.ribench.evaluate_refineR import main as eval_refiner_ribench
 from evaluation.simulated.evaluate_refineR import main as eval_refiner_simulated
 
 
-def main(ribench_dir=None, meta_csv=None):
+def main(ribench_dir, meta_csv, exclude=('CRP', 'LDH')):
     results = []
 
     print("\n" + "=" * 50)
-    errors, zdevs = eval_rinet_ribench(ribench_dir=ribench_dir, meta_csv=meta_csv)
+    errors, zdevs = eval_rinet_ribench(ribench_dir=ribench_dir, meta_csv=meta_csv, exclude=exclude)
     results.append(('Accuracy', 'RINet', 'RIBench', accuracy_at_threshold(errors, 0.1)))
     results.append(('Average Norm. Error', 'RINet', 'RIBench', np.mean(errors)))
     results.append(('Mean |Z-dev|', 'RINet', 'RIBench', np.nanmean(zdevs)))
@@ -32,7 +32,7 @@ def main(ribench_dir=None, meta_csv=None):
     results.append(('Average Norm. Error', 'RINet', 'Simulated', np.mean(errors)))
 
     print("\n" + "=" * 50)
-    errors, zdevs = eval_refiner_ribench(meta_csv=meta_csv)
+    errors, zdevs = eval_refiner_ribench(meta_csv=meta_csv, exclude=exclude)
     results.append(('Accuracy', 'refineR', 'RIBench', accuracy_at_threshold(errors, 0.1)))
     results.append(('Average Norm. Error', 'refineR', 'RIBench', np.mean(errors)))
     results.append(('Mean |Z-dev|', 'refineR', 'RIBench', np.nanmean(zdevs)))
@@ -55,9 +55,12 @@ def main(ribench_dir=None, meta_csv=None):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--ribench_dir', type=str, default=None,
-                        help='Path to RIbench Data/ directory (default: data/RIbench/Data/)')
-    parser.add_argument('--meta_csv', type=str, default=None,
-                        help='Path to RIbench metadata CSV (default: data/RIbench/SpecificationTestSets.csv)')
+    parser.add_argument('--ribench_dir', type=str, required=True,
+                        help='Path to RIbench Data/ directory')
+    parser.add_argument('--meta_csv', type=str, required=True,
+                        help='Path to RIbench metadata CSV (SpecificationTestSets.csv)')
+    parser.add_argument('--exclude', type=str, nargs='+', default=['CRP', 'LDH'],
+                        help='Analytes to exclude (default: CRP LDH). Use --exclude none to exclude nothing.')
     args = parser.parse_args()
-    main(ribench_dir=args.ribench_dir, meta_csv=args.meta_csv)
+    exclude = [] if args.exclude == ['none'] else args.exclude
+    main(ribench_dir=args.ribench_dir, meta_csv=args.meta_csv, exclude=tuple(exclude))

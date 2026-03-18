@@ -9,7 +9,7 @@ _script_dir = os.path.dirname(os.path.abspath(__file__))
 _project_root = os.path.join(_script_dir, '..', '..')
 sys.path.insert(0, _project_root)
 
-from evaluation.utils import norm_err, compute_errors, summarize_errors
+from evaluation.utils import norm_err, compute_errors, summarize_errors, update_summary_scores
 
 
 def main():
@@ -42,6 +42,7 @@ def main():
 
     print("=== refineR on Simulated ===")
     summarize_errors(errors)
+    update_summary_scores("refineR", "Simulated", errors)
 
     return errors
 
